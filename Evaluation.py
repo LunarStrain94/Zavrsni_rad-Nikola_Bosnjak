@@ -12,6 +12,7 @@ def isCompatible(can, available):
     return possible
 
 
+
 def updateAvailableCards(can, av):
     available = av.copy()
     i = 0
@@ -23,11 +24,13 @@ def updateAvailableCards(can, av):
     return available
 
 
+
 def finalEval(stats): #[cnt, sum, jokerCount, flushCount]
     final = []
     for stat in stats:
         final.append(stat[0] + stat[1] - stat[2] + stat[3])
     return final
+
 
 
 def miniEval(can, cnt, sum, jokerCount, flushCount):
@@ -52,6 +55,80 @@ def miniEval(can, cnt, sum, jokerCount, flushCount):
         i += 1
         cnt += 1
     return cnt, sum, jokerCount, flushCount
+
+
+
+def evaluateCandidateSumStraightFlush(candidates):
+    length = len(candidates)
+    jokerCount = 0
+    numbers = []
+    colors = []
+    for card in candidates:
+        if card[CARD_NMBR] == "W":
+            jokerCount += 1
+            numbers.append("W")
+            colors.append("W")
+        elif card[CARD_NMBR] == "1":
+            if candidates.index(card) == 0:
+                numbers.append(1)
+                colors.append(card[CARD_CLR])
+            else:
+                numbers.append(14)
+                colors.append(card[CARD_CLR])
+        else:
+            numbers.append(toOrder(card[CARD_NMBR]))
+            colors.append(card[CARD_CLR])
+
+    sumCandidates = 0
+
+    i = 0
+    while "W" in numbers:
+        if numbers[i] == "W":
+            if i == 0:
+                if numbers[i + 1] != "W":
+                    numbers[i] = numbers[i + 1] - 1
+                    colors[i] = colors[i + 1]
+            elif i == length - 1:
+                if numbers[i - 1] != "W":
+                    numbers[i] = numbers[i - 1] + 1
+                    colors[i] = colors[i - 1]
+            else:
+                if numbers[i - 1] != "W":
+                    numbers[i] = numbers[i - 1] + 1
+                    colors[i] = colors[i - 1]
+                elif numbers[i + 1] != "W":
+                    numbers[i] = numbers[i + 1] - 1
+                    colors[i] = colors[i + 1]
+        
+        if i < length - 1:
+            i += 1
+        else:
+            i = 0
+    
+    for num in numbers:
+        if num == 1:
+            sumCandidates += 10
+        elif num < 10:
+            sumCandidates += num
+        else:
+            sumCandidates += 10
+    
+    return sumCandidates
+
+
+
+def evaluateCandidateSumFlush(candidates):
+    num = 0
+    for can in candidates:
+        if can[CARD_NMBR] != "W":
+            num = toOrder(can[CARD_NMBR])    
+            break
+    if num > 9:
+        num = 10
+    if num == 1:
+        num = 10
+    return len(candidates) * num
+
 
 
 def takeOutRedundantCombos(combos, stats):
@@ -85,11 +162,11 @@ def takeOutRedundantCombos(combos, stats):
     return combos, stats
 
 
-def evaluation(candidates, cardsToCheck): # "redundantne" n-ke mozda nisu tolko redundantne, al nek stoje za sad
+def evaluation(candidates, cardsToCheck):
     combos = []
     stats = []
 
-    for can in candidates: # evaluacija jedinica i nadozuntavanje stats i combos
+    for can in candidates: # evaluacija jedinica i dodavanje stats i combos
         cnt, sum, jokerCount, flushCount = 0, 0, 0, 0
         cnt, sum, jokerCount, flushCount = miniEval(can, cnt, sum, jokerCount, flushCount)
         combos.append([can])
@@ -119,7 +196,7 @@ def evaluation(candidates, cardsToCheck): # "redundantne" n-ke mozda nisu tolko 
             j += 1
         i += 1
     
-    for dbl in doubles: # evaluacija dvojki i nadozuntavanje stats i combos
+    for dbl in doubles: # evaluacija dvojki i dodavanje stats i combos
         cnt, sum, jokerCount, flushCount = 0, 0, 0, 0
         cnt, sum, jokerCount, flushCount = miniEval(dbl[0], cnt, sum, jokerCount, flushCount)
         cnt, sum, jokerCount, flushCount = miniEval(dbl[1], cnt, sum, jokerCount, flushCount)
@@ -153,7 +230,7 @@ def evaluation(candidates, cardsToCheck): # "redundantne" n-ke mozda nisu tolko 
             j += 1
         i += 1
 
-    for trio in triples: # evaluacija trojki i nadozuntavanje combos i stats       
+    for trio in triples: # evaluacija trojki i dodavanje combos i stats       
         cnt, sum, jokerCount, flushCount = 0, 0, 0, 0
         cnt, sum, jokerCount, flushCount = miniEval(trio[0], cnt, sum, jokerCount, flushCount)
         cnt, sum, jokerCount, flushCount = miniEval(trio[1], cnt, sum, jokerCount, flushCount)
@@ -190,7 +267,7 @@ def evaluation(candidates, cardsToCheck): # "redundantne" n-ke mozda nisu tolko 
             j += 1
         i += 1
     
-    for quad in quadruples: # evaluacija cetvorki i nadozuntavanje combos i stats       
+    for quad in quadruples: # evaluacija cetvorki i dodavanje combos i stats       
         cnt, sum, jokerCount, flushCount = 0, 0, 0, 0
         cnt, sum, jokerCount, flushCount = miniEval(quad[0], cnt, sum, jokerCount, flushCount)
         cnt, sum, jokerCount, flushCount = miniEval(quad[1], cnt, sum, jokerCount, flushCount)

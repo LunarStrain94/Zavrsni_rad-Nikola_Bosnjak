@@ -11,9 +11,9 @@ def compareCards(card1, card2, mul):
             return 2 * mul
         if card1[CARD_NMBR] == '1' and card2[CARD_NMBR] == 'K' or card2[CARD_NMBR] == '1' and card1[CARD_NMBR] == 'K':
             return 2 * mul
-        if toOrder(card1[CARD_NMBR]) - toOrder(card2[CARD_NMBR]) == 2 or toOrder(card2[CARD_NMBR]) - toOrder(card1[CARD_NMBR]) == 2:
+        if (toOrder(card1[CARD_NMBR]) - toOrder(card2[CARD_NMBR]) == 2 or toOrder(card2[CARD_NMBR]) - toOrder(card1[CARD_NMBR]) == 2) and card1[CARD_CLR] == card2[CARD_CLR]:
             return 1 * mul
-        if card1[CARD_NMBR] == '1' and card2[CARD_NMBR] == 'Q' or card2[CARD_NMBR] == '1' and card1[CARD_NMBR] == 'Q':
+        if (card1[CARD_NMBR] == '1' and card2[CARD_NMBR] == 'Q' or card2[CARD_NMBR] == '1' and card1[CARD_NMBR] == 'Q') and card1[CARD_CLR] == card2[CARD_CLR]:
             return 1 * mul
     if card1[CARD_NMBR] == card2[CARD_NMBR]:
         if card1[CARD_CLR] != card2[CARD_CLR]:
@@ -28,7 +28,6 @@ def decideCardToThrowOut(cardsInHand, optimalCards, unusedCards, deck, thrownCar
 
     minCard = 15
     minInd = 0
-    ind = 0
 
     if cnt == 0:
         rating = []
@@ -39,7 +38,7 @@ def decideCardToThrowOut(cardsInHand, optimalCards, unusedCards, deck, thrownCar
             
             if toValue(card[CARD_NMBR]) < minCard and card[CARD_NMBR] != '1':
                 minCard = toValue(card[CARD_NMBR])
-                minInd = ind
+                minInd = cardsInHand.index(card)
             
             dbl = 0
             potentialCnt = 0
@@ -48,36 +47,42 @@ def decideCardToThrowOut(cardsInHand, optimalCards, unusedCards, deck, thrownCar
                 if card == card2 or card2[CARD_CLR] == 'W':
                     continue
                 if card[CARD_CLR] == card2[CARD_CLR] and card[CARD_NMBR] == card2[CARD_NMBR]:
-                    dbl += 25
+                    dbl += 15
                 potentialCnt += compareCards(card, card2, 2)
             
+
             rating.append(potentialCnt - dbl)
         
-        rating[minInd] -= 2
+        if minInd < len(rating):
+            rating[minInd] -= 2
+        elif rating == []:
+            pass
+        else:
+            rating[0] -= 2
 
         minCard = 100
         minInd = 0
-        ind = 0
 
-        length = len(rating)
-        for r in range(0, length):
-            if rating[r] < minCard:
-                minCard = rating[r]
-                minInd = r
+        for r in rating:
+            if r < minCard:
+                minCard = r
+                minInd = rating.index(r)
 
-        return cardsInHand[minInd]
+        if len(cardsInHand) > minInd:
+            return cardsInHand[minInd]
+        else:
+            return cardsInHand[-1]
         
     minCard = 15
     minInd = 0
-    ind = 0    
 
     rating = []
     for unCard in unusedCards:
         if toValue(unCard[CARD_NMBR]) < minCard and unCard[CARD_NMBR] != '1':
             minCard = toValue(unCard[CARD_NMBR])
-            minInd = ind
+            minInd = unusedCards.index(unCard)
 
-        if unCard[CARD_CLR] == 'W': # Promijenit ako se uvede izbacivanje skupljenog jokera
+        if unCard[CARD_CLR] == 'W':
             rating.append(100)
             continue
 
@@ -88,7 +93,7 @@ def decideCardToThrowOut(cardsInHand, optimalCards, unusedCards, deck, thrownCar
             if unCard == card or card[CARD_CLR] == 'W':
                 continue
             if unCard[CARD_CLR] == card[CARD_CLR] and unCard[CARD_NMBR] == card[CARD_NMBR]:
-                dbl = 4
+                dbl += 15
                 break
 
         for card in optimalCards:
@@ -110,18 +115,23 @@ def decideCardToThrowOut(cardsInHand, optimalCards, unusedCards, deck, thrownCar
                 continue
             if unCard[CARD_CLR] == card[CARD_CLR] and unCard[CARD_NMBR] == card[CARD_NMBR]:
                 continue
-            potentialCnt += compareCards(unCard, card, -1) # PROVJERIT STA JE UOPCE ZA OCEKIVATI OD OVOGA
+            potentialCnt += compareCards(unCard, card, -1)
         
-        rating.append(potentialCnt - dbl)
-
         for player in game.players:
             for set in player.cardsOnTable:
                 for card in set:
                     potentialCnt += compareCards(unCard, card, 1)
+        
+        rating.append(potentialCnt - dbl)
 
-        ind += 1
 
-    rating[minInd] -= 2
+    if minInd < len(rating):
+        rating[minInd] -= 2
+    elif rating == []:
+        return cardsInHand[-1]
+    else:
+        rating[0] -= 2
+
     ratingInd = rating.index(min(rating))
 
     return unusedCards[ratingInd]

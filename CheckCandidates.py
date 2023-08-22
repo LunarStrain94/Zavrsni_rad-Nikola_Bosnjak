@@ -50,7 +50,7 @@ def sortCards(candidates):
 
 
 
-def candidateColorOrder(candidates):
+def candidateFlush(candidates):
     candidates = sortCards(candidates)
     while len(candidates) < 5:
         candidates.append(("PLACEH", "0", "LDER"))
@@ -75,7 +75,9 @@ def candidateColorOrder(candidates):
 
 
 
-def candidateOrder(candidates):
+def candidateStraightFlush(candidates):
+    if len(candidates) < 2:
+        return False
     candidates = sortCards(candidates)
     while len(candidates) < 5:
         candidates.append(("PLACEH", "0", "LDER"))
@@ -85,6 +87,12 @@ def candidateOrder(candidates):
         tmp = [candidates[i]]
         j = 0
         while j < 5:
+            if len(tmp) == 2:
+                if tmp[0][CARD_NMBR] == "K" and tmp[1][CARD_NMBR] == "A":
+                    for can in candidates:
+                        if can[CARD_CLR] == "W":
+                            tmp.insert(0, can)
+                            return tmp
             if tmp[-1][CARD_CLR] == 'W' and toOrder(candidates[j][CARD_NMBR]) - toOrder(tmp[-2][CARD_NMBR]) == 2 and candidates[j][CARD_CLR] == tmp[0][CARD_CLR]:
                 tmp.append(candidates[j])
                 j = 0
@@ -112,7 +120,7 @@ def candidateOrder(candidates):
                 if len(tmp) > 1 and tmp[-2][CARD_NMBR] == "K":
                     j += 1
                     continue    
-                tmp.append(candidates[j])# Možda stavit uvjete u uvjete da bude malo preglednije.
+                tmp.append(candidates[j])
                 j = 0
                 continue
             j += 1
@@ -122,13 +130,95 @@ def candidateOrder(candidates):
 
 
 
+def candidateStraightFlushOnTable(candidates):
+    length = len(candidates)
+    if length < 2:
+        return False
+    if candidates[1][CARD_NMBR] == "1":
+        return False
+    jokerCount = 0
+    numbers = []
+    colors = []
+    for card in candidates:
+        if card[CARD_NMBR] == "W":
+            jokerCount += 1
+            numbers.append("W")
+            colors.append("W")
+        elif card[CARD_NMBR] == "1":
+            if candidates.index(card) == 0:
+                numbers.append(1)
+                colors.append(card[CARD_CLR])
+            else:
+                numbers.append(14)
+                colors.append(card[CARD_CLR])
+        else:
+            numbers.append(toOrder(card[CARD_NMBR]))
+            colors.append(card[CARD_CLR])
+
+    i = 0
+    while "W" in numbers:
+        if numbers[i] == "W":
+            if i == 0:
+                if numbers[i + 1] != "W":
+                    numbers[i] = numbers[i + 1] - 1
+                    colors[i] = colors[i + 1]
+            elif i == length - 1:
+                if numbers[i - 1] != "W":
+                    numbers[i] = numbers[i - 1] + 1
+                    colors[i] = colors[i - 1]
+            else:
+                if numbers[i - 1] != "W":
+                    numbers[i] = numbers[i - 1] + 1
+                    colors[i] = colors[i - 1]
+                elif numbers[i + 1] != "W":
+                    numbers[i] = numbers[i + 1] - 1
+                    colors[i] = colors[i + 1]
+        
+        if i < length - 1:
+            i += 1
+        else:
+            i = 0
+
+    if 15 in numbers or 0 in numbers:
+        return False
+    
+    for i in range(0, length - 1):
+        if numbers[i + 1] - numbers[i] != 1:
+            return False
+        if colors[i] != colors[i + 1]:
+            return False
+    return True
+
+
+
+def candidateFlushOnTable(candidates):
+    length = len(candidates)
+    if length > 4:
+        return False
+    for i in range(0, length):
+        if candidates[i][CARD_CLR] == "W":
+            continue
+        for j in range(0, length):
+            if i == j:
+                continue
+            if candidates[j][CARD_CLR] == "W":
+                continue
+            if candidates[i][CARD_NMBR] != candidates[j][CARD_NMBR]:
+                return False
+            if candidates[i][CARD_CLR] == candidates[j][CARD_CLR]:
+                return False
+    return True
+            
+
+
+
 def check(comb, candidates):
     cnt = 0
     for i in comb:
-        if candidateColorOrder(i) != False and candidateColorOrder(i) not in candidates:
-            candidates.append(candidateColorOrder(i))
+        if candidateFlush(i) != False and candidateFlush(i) not in candidates:
+            candidates.append(candidateFlush(i))
             cnt += 1
-        if candidateOrder(i) != False and candidateOrder(i) not in candidates:
-            candidates.append(candidateOrder(i))
+        if candidateStraightFlush(i) != False and candidateStraightFlush(i) not in candidates:
+            candidates.append(candidateStraightFlush(i))
             cnt += 1
     return candidates, cnt
